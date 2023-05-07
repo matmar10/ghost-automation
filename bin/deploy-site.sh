@@ -8,6 +8,7 @@ GODADDY_API_KEY=""
 GODADDY_API_SECRET=""
 MYSQL_ROOT_PASSWORD=""
 NO_PROMPT=false
+NO_OP=false
 
 # Function to print the usage
 print_usage() {
@@ -19,6 +20,7 @@ print_usage() {
   echo "  -r, --godaddy-api-secret   GoDaddy API secret"
   echo "  -p, --mysql-root-password  MySQL root password"
   echo "  -n, --no-prompt            Run in non-interactive mode"
+  echo "  -x, --no-op                No-op mode (dry-run)"
   echo ""
   echo "Example:"
   echo "  $0 -d example.com -s subdomain -e email@example.com -k api_key -r api_secret -p mysql_root_password --no-prompt"
@@ -114,13 +116,20 @@ create_mysql_db() {
   fi
 }
 
+exit_if_noop() {
+  if [ "$NO_OP" = true ]; then
+    echo "(no-op mode) Done."
+    exit 0
+  fi
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     -d|--domain)
       DOMAIN="$2"
       shift 2
       ;;
-    -s|--subdomain)
+    -s|--site-name)
       RAW_SITE_NAME="$2"
       shift 2
       ;;
@@ -142,6 +151,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     -n|--no-prompt)
       NO_PROMPT=true
+      shift
+      ;;
+    -n|--no-op)
+      NO_OP=true
       shift
       ;;
     *)
@@ -170,6 +183,8 @@ echo -e "Install Dir:\t\t$GHOST_INSTALL_DIR"
 echo ""
 
 confirm_to_proceed
+
+exit_if_noop
 
 echo ""
 echo " > Configuring DNS"
