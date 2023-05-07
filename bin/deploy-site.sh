@@ -7,6 +7,8 @@ SSL_EMAIL=""
 GODADDY_API_KEY=""
 GODADDY_API_SECRET=""
 MYSQL_ROOT_PASSWORD=""
+GHOST_DB_NAME=""
+INSTALL_DIR="/var/www"
 NO_PROMPT=false
 NO_OP=false
 
@@ -15,15 +17,17 @@ print_usage() {
   echo "Usage: $0 [OPTIONS]"
   echo "  -s, --site-name            Site name (subdomain)"
   echo "  -d, --domain               Domain name"
+  echo "  -i, --install-dir          Installation directory (default: /var/www)"
   echo "  -e, --ssl-email            SSL email"
   echo "  -k, --godaddy-api-key      GoDaddy API key"
   echo "  -r, --godaddy-api-secret   GoDaddy API secret"
   echo "  -p, --mysql-root-password  MySQL root password"
+  echo "  -m, --db-name              MySQL DB name to install Ghost into"
   echo "  -n, --no-prompt            Run in non-interactive mode"
   echo "  -x, --no-op                No-op mode (dry-run)"
   echo ""
   echo "Example:"
-  echo "  $0 -d example.com -s subdomain -e email@example.com -k api_key -r api_secret -p mysql_root_password --no-prompt"
+  echo "  $0 -s bmt-makmur -d koperasipintar.org -i /opt/www/ -e email@example.com -k api_key -r api_secret -p mysql_root_password --no-prompt"
 }
 
 make_url_safe() {
@@ -56,7 +60,7 @@ confirm_to_proceed() {
 
 assert_required_arguments() {
   # Check if all required variables are provided
-  if [ -z "$SITE_NAME" ] || [ -z "$DOMAIN" ] || [ -z "$SSL_EMAIL" ] || [ -z "$GODADDY_API_KEY" ] || [ -z "$GODADDY_API_SECRET" ] || [ -z "$MYSQL_ROOT_PASSWORD" ]; then
+  if [ -z "$SITE_NAME" ] || [ -z "$DOMAIN" ] || [ -z "$SSL_EMAIL" ] || [ -z "$GODADDY_API_KEY" ] || [ -z "$GODADDY_API_SECRET" ] || [ -z "$MYSQL_ROOT_PASSWORD" ] || [ -z "$GHOST_DB_NAME" ]; then
     echo "Error: Missing required arguments."
     print_usage
     exit 2
@@ -89,11 +93,11 @@ update_cname_record() {
 configure_dns() {
   local current_cname_record=$(get_cname_record)
   if [ -z "${current_cname_record}" ] || [ "${current_cname_record}" == "[]" ]; then
-    echo "Adding CNAME record for ${SITE_NAME}.${DOMAIN} pointing to ${DOMAIN}"
+    echo "Adding CNAME record for ${TARGET_DOMAIN} pointing to ${DOMAIN}"
     update_cname_record
     echo "CNAME record added successfully."
   else
-    echo "Updating CNAME record for ${SITE_NAME}.${DOMAIN} to point to ${DOMAIN}"
+    echo "Updating CNAME record for ${TARGET_DOMAIN} to point to ${DOMAIN}"
     update_cname_record
     echo "CNAME record updated successfully."
   fi
@@ -133,6 +137,10 @@ while [ "$#" -gt 0 ]; do
       RAW_SITE_NAME="$2"
       shift 2
       ;;
+    -i|--install-dir)
+      INSTALL_DIR="$2"
+      shift 2
+      ;;
     -e|--ssl-email)
       SSL_EMAIL="$2"
       shift 2
@@ -149,6 +157,10 @@ while [ "$#" -gt 0 ]; do
       MYSQL_ROOT_PASSWORD="$2"
       shift 2
       ;;
+    -m|--db-name)
+      GHOST_DB_NAME="$2"
+      shift 2
+      ;;
     -n|--no-prompt)
       NO_PROMPT=true
       shift
@@ -159,17 +171,24 @@ while [ "$#" -gt 0 ]; do
       ;;
     *)
       print_usage
-      exit 1
+      exit 6
       ;;
   esac
 done
 
 SITE_NAME=$(make_url_safe "$RAW_SITE_NAME")
+if [ "$SITE_NAME" != "$RAW_SITE_NAME" ]; then
+  echo "Invalid site name: site name must be URL safe"
+  exit 7
+fi
+GHOST_DB_NAME_SAFE=$(make_db_safe "$GHOST_DB_NAME")
+if [ "$GHOST_DB_NAME_SAFE" != "$GHOST_DB_NAME" ]; then
+  echo "Invalid db name: db name must be mysql safe/compatible"
+  exit 8
+fi
 TARGET_DOMAIN="$SITE_NAME.$DOMAIN"
-GHOST_DB_NAME_PREFIX=$(make_db_safe "$RAW_SITE_NAME")
-GHOST_DB_NAME="${GHOST_DB_NAME_PREFIX}_ghost_db"
-GHOST_DOMAIN="${GHOST_SITE_NAME}.${GHOST_BASE_DOMAIN}"
-GHOST_INSTALL_DIR="/var/www/${SITE_NAME}"
+GHOST_DOMAIN="${GHOST_SITE_NAME}.${DOMAIN}"
+GHOST_INSTALL_DIR="${INSTALL_DIR}/${SITE_NAME}"
 
 assert_required_arguments
 
