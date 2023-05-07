@@ -1,6 +1,6 @@
 {
   "name": "ghost-automation",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "CLI script to deploy Ghost sites along with GoDaddy.com DNS",
   "main": "index.js",
   "bin": {
