@@ -1,0 +1,35 @@
+{
+  "name": "ghost-automation",
+  "version": "0.0.1",
+  "description": "CLI script to deploy Ghost sites along with GoDaddy.com DNS",
+  "main": "index.js",
+  "bin": {
+    "deploy-ghost": "bin/deploy-site.sh"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matmar10/ghost-automation.git"
+  },
+  "keywords": [
+    "CLI",
+    "bin",
+    "Ghost",
+    "CMS",
+    "automation"
+  ],
+  "author": "Matthew J. Martin <matthew.mar10@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/matmar10/ghost-automation/issues"
+  },
+  "homepage": "https://github.com/matmar10/ghost-automation#readme",
+  "dependencies": {
+    "shelljs": "^0.8.5"
+  },
+  "devDependencies": {
+    "@types/shelljs": "^0.8.12"
+  }
+}
